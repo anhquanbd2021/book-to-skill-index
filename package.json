@@ -1,0 +1,16 @@
+{
+  "name": "book-to-skill-index-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Book Index — a book-as-skill lab: whole-book context vs manifest+leaf index, and the lossy edge of distillation.",
+  "scripts": {
+    "start": "node app/server.js",
+    "report": "node scripts/index-report.mjs",
+    "test": "node --test \"test/*.test.mjs\"",
+    "check": "npm test && npm run report"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

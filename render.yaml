@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: book-to-skill-index
+    runtime: node
+    plan: free
+    buildCommand: npm run check
+    startCommand: npm start
+    healthCheckPath: /health

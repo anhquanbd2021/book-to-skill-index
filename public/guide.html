@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How the Book Index lab works: manifest routing, leaf loading, token accounting, and the honest limits.">
+  <title>Book Index — guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Inter:wght@400..700&family=JetBrains+Mono:wght@500;700&display=swap&subset=latin,latin-ext,vietnamese">
+  <link rel="stylesheet" href="/styles.css">
+<!-- pb-shell --><link rel="stylesheet" href="./pb-shell.css"><!-- pb-shell --><!-- pb-back --><link rel="stylesheet" href="./pb-back.css"><!-- pb-back --></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<main id="main" tabindex="-1">
+  <nav aria-label="Primary"><a href="/">Lab</a><a aria-current="page" href="/guide.html">Guide</a><a href="https://github.com/anhquanbd2021/book-to-skill-index">Source<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8 8 2M3.5 2H8v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="nav-meta">article playbook · demo</span></nav>
+  <header class="hero">
+    <div><p class="eyebrow">Guide</p><h1>The file layout is the index.</h1><p class="lede">A book-to-skill conversion doesn't put the book in the skill. It puts a <em>way to find the book</em> in the skill: a small always-loaded manifest plus one distilled leaf per chapter. This page is what the lab is actually showing.</p></div>
+  </header>
+
+  <section class="panel guide-section" aria-labelledby="shape-title">
+    <h2 id="shape-title">The shape</h2>
+    <p>A generated skill for <em>The Queue at the Edge</em> is six files:</p>
+    <pre class="code-block">skill/
+├── SKILL.md          manifest — always loaded (~453 tok)
+└── chapters/
+    ├── ch01.md       distilled leaf — on demand
+    ├── …
+    └── ch06.md       distilled leaf — on demand</pre>
+    <ul>
+      <li><code>skill/SKILL.md</code> — the manifest: core mental model, the chapter map (each leaf's title, coverage phrases, source ref), and the escalation rule. ~453 estimated tokens. Always loaded.</li>
+      <li><code>skill/chapters/*.md</code> — one distilled leaf per chapter, ~100–150 estimated tokens each. Loaded only when the manifest routes a question to it.</li>
+    </ul>
+    <p>Mode A pays for all six full chapters (~2,257 estimated tokens) every question. Mode B pays for the manifest plus one leaf (~570–600). Same question, ~4x cheaper at toy scale — on a real book the source repo measures ~24x, because a real book is ~50x this fixture.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Mode</th><th>Context loaded</th><th>What it shows</th></tr>
+        <tr><td><strong>whole-book</strong></td><td>all 6 full chapters (~2,257 est. tokens)</td><td>the baseline: pays the full bill every question</td></tr>
+        <tr><td><strong>skill-index</strong></td><td><code>SKILL.md</code> manifest + one distilled leaf (~570–600)</td><td>the index: route via the manifest, load one file, answer</td></tr>
+        <tr><td><strong>index + escalate</strong></td><td>manifest + leaf + the leaf's source chapter</td><td>the fix for a miss: the leaf's <code>sourceRef</code> loads the real chapter once</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="edge-title">
+    <h2 id="edge-title">The lossy edge</h2>
+    <p>Question 3 asks for the Lisbon ring's node count. The distiller kept the <em>lesson</em> (quorum must track live membership) and dropped the number as trivia. The index routes correctly — ch02 — and then the context contains no node count. Nothing in the leaf says "this was dropped," so the miss is confident.</p>
+    <p>The leaf's <code>Source ref</code> field is the fix: a miss escalates by loading the real chapter once (~370 more tokens), finds "fourteen nodes," and still costs less than half of dumping the book. An index you can escalate through beats an index you have to trust.</p>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="limits-title">
+    <h2 id="limits-title">Honest limits</h2>
+    <ul>
+      <li>"Answering" is <strong>evidence lookup</strong>: a mode is correct iff its loaded context contains the question's marker string. No model is called — the lab shows context cost and coverage, which are the parts the post's 24x claim is actually about.</li>
+      <li>Token counts are <strong>estimates</strong> (~4 chars/token), consistent enough to compare modes, not to bill anyone.</li>
+      <li>Routing here is substring scoring over <code>covers</code> phrases; a real skill is routed by the model reading the manifest. The lab's routing exists to make the selection step inspectable.</li>
+      <li>The corpus is a fixture — six short chapters. A real book inflates <em>both</em> numbers but widens the ratio, because the manifest stays ~5K while the book grows unboundedly.</li>
+      <li>The distilled leaves were written by hand to be good distillations. A real converter's output quality is the variable this demo can't show.</li>
+    </ul>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="map-title">
+    <h2 id="map-title">File map</h2>
+    <ul>
+      <li><code>public/book.mjs</code> — the corpus: full chapters + distilled leaves + MANIFEST</li>
+      <li><code>public/index.mjs</code> — token accounting + manifest routing</li>
+      <li><code>public/modes.mjs</code> — whole-book, skill-index, and escalate modes</li>
+      <li><code>public/questions.mjs</code> — the three scripted questions + markers</li>
+      <li><code>examples/</code> — the same corpus as inspectable files (tests assert the mirror)</li>
+      <li><code>scripts/index-report.mjs</code> — CLI side-by-side with claim checks</li>
+    </ul>
+    <p class="try">Run <code>npm run report</code> for the terminal version of the side-by-side.</p>
+  </section>
+</main>
+<!-- pb-shell --><a class="pb-shell" href="https://github.com/anhquanbd2021/book-to-skill-index" title="book-to-skill-index — an Article Playbook demo (view source)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="2" fill="#2dd4bf"/><rect x="13" y="2" width="9" height="9" rx="2" fill="#2dd4bf" opacity=".45"/><rect x="2" y="13" width="9" height="9" rx="2" fill="#2dd4bf" opacity=".45"/><rect x="13" y="13" width="9" height="9" rx="4.5" fill="#2dd4bf"/></svg><b>book-to-skill-index</b><i>DEMO</i></a><!-- pb-shell --><!-- pb-back --><a class="pb-back" id="pb-back" href="https://github.com/anhquanbd2021/book-to-skill-index" title="Back to the article — book-to-skill-index">← Article <i>PLAYBOOK</i></a><script>(function(){var a=document.getElementById('pb-back');if(!a)return;var h=location.hostname;if(/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(h)){a.href='//'+h+':'+(/^(localhost|127\.0\.0\.1)$/.test(h)?'1234':'30082')+'/microsites/article.html?slug=book-to-skill-index';}})();</script><!-- pb-back --></body>
+</html>
